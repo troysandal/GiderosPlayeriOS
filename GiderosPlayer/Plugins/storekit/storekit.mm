@@ -131,7 +131,7 @@ static void dispatchEvent(lua_State* L, const char* type,
 		
 		lua_newtable(L);
 		
-		lua_pushlightuserdata(L, transaction);
+		lua_pushlightuserdata(L, (__bridge void *)transaction);
 		lua_setfield(L, -2, "__userdata");
 		
 		switch (transaction.transactionState)
@@ -334,9 +334,10 @@ private:
 	StoreKitHelper* helper;
 };
 
-static int destruct(lua_State* L)
+static int destruct(void* luaState)
 {
-	void* ptr = *(void**)lua_touserdata(L, 1);
+    lua_State* L = (lua_State*)luaState;
+    void* ptr = *(void**)lua_touserdata(L, 1);
 	GReferenced* object = static_cast<GReferenced*>(ptr);
 	StoreKit* storekit = static_cast<StoreKit*>(object->proxy());
 	
@@ -412,7 +413,7 @@ static int finishTransaction(lua_State* L)
 	
 	lua_getfield(L, 2, "__userdata");
 	luaL_checktype(L, -1, LUA_TLIGHTUSERDATA);
-	SKPaymentTransaction* transaction = (SKPaymentTransaction*)lua_touserdata(L, -1);
+	SKPaymentTransaction* transaction = (__bridge SKPaymentTransaction*)lua_touserdata(L, -1);
 	lua_pop(L, 1);
 
 	storekit->finishTransaction(transaction);
@@ -481,7 +482,7 @@ static void g_initializePlugin(lua_State* L)
 	lua_getglobal(L, "package");
 	lua_getfield(L, -1, "preload");
 	
-	lua_pushcfunction(L, loader);
+	lua_pushcfunction(L, loader, "loader");
 	lua_setfield(L, -2, "storekit");
 	
 	lua_pop(L, 2);	
